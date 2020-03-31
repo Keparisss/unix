@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # запуск скрипта 
 # перейти в каталог, в котором находится файл
@@ -8,23 +8,48 @@
 ok=0;
 notOk=1;
 
+EMPTY_ARG="EMPTY_ARG"
+READ_PERM_DENIED="READ_PERM_DENIED or FILE_NOT_FOUND"
+NO_OUTPUT_SPECIFIED="NO_OUTPUT_SPECIFIED"
+
 function clean() {
-  printf "Cleaning... \n";
+  printf "\nCleaning...";
   rm -rf $1;
 
-	printf "Exited with status: $2 \n";
-  exit $2;
+  exit;
 }
+
+function validateFileName() {
+	if [ -z $1 ]
+		then
+			printf $EMPTY_ARG;
+			exit $notOk;
+	fi
+
+	if [ ! -r $1 ]
+		then
+			printf $READ_PERM_DENIED;
+			exit $notOk;
+	fi
+}
+
+validateFileName $1
+
+tempDir=$(mktemp -d); # mktem	p - создает временную директорию
+trap "clean $tempDir" EXIT SIGHUP SIGINT SIGQUIT SIGPIPE SIGTERM;
 
 sourceFile=$(basename $1); # $1 - берет первый аргумент вызова
 sourceFileDir=$(dirname $1);
-outputFileName=$(cat $1 | sed -n 's/.*Output: //p' | tr -d '\r'); # /p - выводит найденное выражение https://www.grymoire.com/Unix/Sed.html#uh-9
+outputFileName=$(cat $1 | sed -n '0,/.*Output: /s/.*Output: //p' | tr -d '\r'); # /p - выводит найденное выражение https://www.grymoire.com/Unix/Sed.html#uh-9
+
+if [ -z $outputFileName ]
+	then
+		printf $NO_OUTPUT_SPECIFIED;
+		exit;
+fi
+
 # | - труба, перенаправляет поток
 # -n - использует только строку с найденным условием
-
-tempDir=$(mktemp -d); # mktemp - создает временную директорию
-
-trap "clean $tempDir $ok" SIGINT SIGTERM;
 
 cp $sourceFileDir/$sourceFile $tempDir; #cp - copy file to dir
 g++ $tempDir/$sourceFile -o $tempDir/$outputFileName;
@@ -32,11 +57,8 @@ g++ $tempDir/$sourceFile -o $tempDir/$outputFileName;
 if [ $? -eq $ok ] # $? - код выполнения последней команды (g++)
 then
 	printf "Success \n";
-	exitCode=$ok;
 	cp $tempDir/$outputFileName $sourceFileDir;
 else
 	printf "Compilation went wrong \n";
-	exitCode=$notOk;
 fi
 
-clean $tempDir $exitCode; # вызов функции с 2мя параметрами
