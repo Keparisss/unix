@@ -8,12 +8,15 @@
 ok=0;
 notOk=1;
 
+SUCCESS="SUCCESS"
+CLEANING="\nCLEANING"
 EMPTY_ARG="EMPTY_ARG"
+FILE_IS_DIR="FILE_IS_DIR"
 READ_PERM_DENIED="READ_PERM_DENIED or FILE_NOT_FOUND"
 NO_OUTPUT_SPECIFIED="NO_OUTPUT_SPECIFIED"
 
 function clean() {
-  printf "\nCleaning...";
+  printf $CLEANING;
   rm -rf $1;
 
   exit;
@@ -23,6 +26,12 @@ function validateFileName() {
 	if [ -z $1 ]
 		then
 			printf $EMPTY_ARG;
+			exit $notOk;
+	fi
+
+	if [ -d $1 	]
+		then
+			printf $FILE_IS_DIR;
 			exit $notOk;
 	fi
 
@@ -51,14 +60,12 @@ fi
 # | - труба, перенаправляет поток
 # -n - использует только строку с найденным условием
 
-cp $sourceFileDir/$sourceFile $tempDir; #cp - copy file to dir
-g++ $tempDir/$sourceFile -o $tempDir/$outputFileName;
+cp $sourceFileDir/$sourceFile $tempDir; # cp - copy file to dir
+cd $tempDir;
 
-if [ $? -eq $ok ] # $? - код выполнения последней команды (g++)
-then
-	printf "Success \n";
-	cp $tempDir/$outputFileName $sourceFileDir;
-else
-	printf "Compilation went wrong \n";
-fi
+g++ $sourceFile -o $outputFileName;
 
+printf $SUCCESS;
+cd - > /dev/null;
+
+cp $tempDir/$outputFileName $sourceFileDir;

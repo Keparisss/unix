@@ -1,0 +1,11 @@
+{
+  "disconnectClient": "Disconnected \n",
+  "connectClient": "Connected \n",
+  "disconnect": "Client disconnected ",
+  "connectTry": "Client tried to connect: ",
+  "currentConnection": "Current connection is: ",
+  "caughtSIGINT": "\nCaught SIGINT, exiting...",
+  "serverOnPort": "Server running on port: ",
+  "serverOnSocket": "Server running on socket: ",
+  "addressAlreadyInUse": "Address already in use"
+}
